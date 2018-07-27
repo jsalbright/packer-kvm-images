@@ -1,0 +1,54 @@
+---
+driver:
+  name: vagrant
+    memory: 4096
+    cpus: 2
+    cpuexecutioncap: 100
+
+provisioner:
+  name: ansible_playbook
+  require_chef_for_busser: false
+  additional_copy_role_path:
+    - tasks
+  additional_ssh_private_keys:
+    - <%= ENV['SSH_KEY_FILE'] || "~/.ssh/github_rsa" %>
+  show_command_output: <%= ENV['ANSIBLE_DEBUG'] || false %>
+  ansible_verbose:     <%= ENV['ANSIBLE_DEBUG'] || false %>
+  ansible_verbosity:   4
+  hosts: local
+  extra_vars:
+    ARTIFACT_TAG: latest
+
+verifier:
+  name: inspec
+
+platforms:
+  - name: ubuntu-18.04
+  - name: ubuntu-16.04
+  - name: ubuntu-14.04
+  - name: kvm-ubuntu-14.04
+    driver:
+      name: qemu
+      image: /opt/kvm-images/jessie.qcow2.xz
+
+suites:
+
+  - name: kvm-test
+    driver:
+      name: qemu
+      image: /home/jsalbright/work/packer-qemu-templates/ubuntu/output-qemu-ubuntu-14.04/qemu-ubuntu-14.04
+      username: vagrant 
+      password: vagrant
+      kvm: true
+    provisioner:
+      playbook: play-ubuntu-setup.yml
+      additional_copy_role_path:
+        - tasks
+      extra_vars:
+        System_Home:     "/home/jsalbright"
+        System_Username: "jsalbright"
+        kitchen_test:    true
+    excludes:
+     - ubuntu-16.04
+     - ubuntu-18.04
+     - ubuntu-14.04
